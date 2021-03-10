@@ -74,15 +74,18 @@ export const ProposalsSchema = {
   proposals: 'proposalArr',
 };
 
-export const operationEncoder = (encoders: { [key: string]: (val: {}) => string }) => (operation: {
+export const operationEncoder = (encoders: { [key: string]: (val: {}, protocol?: string) => string }) => (operation: {
   kind: string;
-}) => {
+}, protocol?: string) => {
   if (!(operation.kind in encoders) || !(operation.kind in kindMappingReverse)) {
     throw new Error(`Unsupported operation kind: ${operation.kind}`);
   }
 
   const kind = (operation.kind === 'delegation' && 'version' in operation)? 'delegationSg1': operation.kind
-  return kindMappingReverse[kind] + encoders[operation.kind](operation);
+  console.log("Operation: ", operation.kind);
+  console.log(operation);
+  console.log("Protocol in operation", protocol);
+  return kindMappingReverse[kind] + encoders[operation.kind](operation, protocol);
 };
 
 export const operationDecoder = (decoders: { [key: string]: Decoder }) => (
@@ -112,27 +115,42 @@ if(op[0] === 0xd2) {
   }
 };
 
-export const schemaEncoder = (encoders: { [key: string]: (val: {}) => string }) => (schema: {
+export const schemaEncoder = (encoders: { [key: string]: (val: {}, protocol?: string) => string }) => (schema: {
   [key: string]: string | string[];
-}) => <T extends { [key: string]: any }>(value: T) => {
+}) => <T extends { [key: string]: any }> (value: T, protocol?: string) => {
+  console.log("Schema: ", schema);
+  console.log("Value: ", value);
+  console.log("Protocol: ", protocol);
+
   const keys = Object.keys(schema);
   return keys.reduce((prev, key) => {
     const valueToEncode = schema[key];
-
+    console.log("Key to encode: ", key);
     if (Array.isArray(valueToEncode)) {
       const encoder = encoders[valueToEncode[0]];
       const values = value[key];
+      console.log("value to encode: ", valueToEncode[0]);
+      console.log(encoder.toString());
 
       if (!Array.isArray(values)) {
         throw new Error(`Exepected value to be Array ${JSON.stringify(values)}`);
       }
-
-      return prev + values.reduce((prevBytes, current) => prevBytes + encoder(current), '');
+      console.log("values: ", values);
+      console.log("return: ", prev + values.reduce((prevBytes, current) => prevBytes + encoder(current, protocol), ''));
+      return prev + values.reduce((prevBytes, current) => prevBytes + encoder(current, protocol), '');
     } else {
+      console.log("Value: ", value);
+      console.log("valuencode: ", valueToEncode);
+      console.log("Key: ", key);
+      console.log("Protocol: ", protocol);
+      console.log("Prev: "+prev);
+      
       const encoder = encoders[valueToEncode];
-      return prev + encoder(value[key]);
+      
+      console.log("return 2: ", prev + encoder(value[key], protocol));
+      return prev + encoder(value[key], protocol);
     }
-  }, '');
+  });
 };
 
 export const schemaDecoder = (decoders: { [key: string]: Decoder }) => (schema: {

@@ -1,6 +1,6 @@
 import { CONFIGS } from "./config";
 import { veryCommonCases, commonCases, edoCases, falphanetCases } from '../packages/taquito-local-forging/test/allTestsCases';
-import { localForger } from '@taquito/local-forging'
+import { LocalForger, localForger } from '@taquito/local-forging'
 import { Protocols, TezosToolkit } from "@taquito/taquito";
 
 CONFIGS().forEach(({ rpc, protocol }) => {
@@ -49,6 +49,7 @@ CONFIGS().forEach(({ rpc, protocol }) => {
         veryCommonCases.forEach(({ name, operation, expected }) => {
 
             it(`Should give the same result as when forging with the rpc: ${name} (${rpc})`, async done => {
+                const localForger = new LocalForger(protocol);
                 const result = await localForger.forge(operation);
                 const rpcResult = await Tezos.rpc.forgeOperations(operation);
                 expect(result).toEqual(rpcResult);

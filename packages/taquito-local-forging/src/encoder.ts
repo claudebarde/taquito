@@ -29,7 +29,7 @@ import {
   TransactionSchema,
 } from './schema/operation';
 
-export type Encoder<T> = (val: T) => string;
+export type Encoder<T> = (val: T, protocol?: string) => string;
 
 export const encoders: { [key: string]: Encoder<any> } = {
   [CODEC.SECRET]: (val: string) => val,
@@ -52,7 +52,7 @@ export const encoders: { [key: string]: Encoder<any> } = {
 encoders[CODEC.OPERATION] = operationEncoder(encoders);
 encoders[CODEC.OP_ACTIVATE_ACCOUNT] = (val: any) => schemaEncoder(encoders)(ActivationSchema)(val);
 encoders[CODEC.OP_DELEGATION] = (val: any) => schemaEncoder(encoders)(DelegationSchema)(val);
-encoders[CODEC.OP_TRANSACTION] = (val: any) => schemaEncoder(encoders)(TransactionSchema)(val);
+encoders[CODEC.OP_TRANSACTION] = (val: any, protocol?: string) => schemaEncoder(encoders)(TransactionSchema)(val, protocol);
 encoders[CODEC.OP_ORIGINATION] = (val: any) => schemaEncoder(encoders)(OriginationSchema)(val);
 encoders[CODEC.OP_BALLOT] = (val: any) => schemaEncoder(encoders)(BallotSchema)(val);
 encoders[CODEC.OP_ENDORSEMENT] = (val: any) => schemaEncoder(encoders)(EndorsementSchema)(val);

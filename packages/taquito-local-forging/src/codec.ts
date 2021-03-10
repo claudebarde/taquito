@@ -1,3 +1,4 @@
+import { Protocols } from '@taquito/taquito';
 import {
   b58cdecode,
   b58cencode,
@@ -12,7 +13,8 @@ import { extractRequiredLen, valueDecoder, valueEncoder, MichelsonValue } from '
 import { Uint8ArrayConsumer } from './uint8array-consumer';
 import { pad } from './utils';
 
-export const prefixEncoder = (prefix: Prefix) => (str: string) => {
+export const prefixEncoder = (prefix: Prefix, protocol?: string) => (str: string) => {
+  console.log("Prefix encoder: ", prefix, str, protocol);
   return buf2hex(Buffer.from(b58cdecode(str, prefixMap[prefix])));
 };
 
@@ -133,17 +135,19 @@ export const delegateDecoder = (val: Uint8ArrayConsumer) => {
   }
 };
 
-export const pkhEncoder = (val: string) => {
+export const pkhEncoder = (val: string, protocol?: string) => {
+  console.log("pkhencoder: ",val);
   const pubkeyPrefix = val.substr(0, 3);
   switch (pubkeyPrefix) {
     case Prefix.TZ1:
-      return '00' + prefixEncoder(Prefix.TZ1)(val);
+      console.log("tz1 ",'00' + prefixEncoder(Prefix.TZ1)(val))
+      return '00' + prefixEncoder(Prefix.TZ1, protocol)(val);
     case Prefix.TZ2:
-      return '01' + prefixEncoder(Prefix.TZ2)(val);
+      return '01' + prefixEncoder(Prefix.TZ2, protocol)(val);
     case Prefix.TZ3:
-      return '02' + prefixEncoder(Prefix.TZ3)(val);
+      return '02' + prefixEncoder(Prefix.TZ3, protocol)(val);
     case Prefix.SG1:
-      return prefixEncoder(Prefix.SG1)(val);
+      return prefixEncoder(Prefix.SG1, protocol)(val);
     default:
       throw new Error('Invalid public key hash');
   }
@@ -278,9 +282,13 @@ export const parametersDecoder = (val: Uint8ArrayConsumer) => {
     };
   }
 };
-export const entrypointEncoder = (entrypoint: string) => {
+export const entrypointEncoder = (entrypoint: string, protocol?: string) => {
+  console.log("Protocol: ");
+  console.log(protocol);
   if (entrypoint in entrypointMappingReverse) {
     return `${entrypointMappingReverse[entrypoint]}`;
+  } else if (protocol === Protocols.PsrsRVg1) {
+    return `05`;
   } else {
     if (entrypoint.length > ENTRYPOINT_MAX_LENGTH) {
       throw new Error(
@@ -293,12 +301,14 @@ export const entrypointEncoder = (entrypoint: string) => {
   }
 };
 
-export const parametersEncoder = (val: { entrypoint: string; value: MichelsonValue }) => {
+export const parametersEncoder = (val: { entrypoint: string; value: MichelsonValue }, protocol?: string) => {
+  console.log(val);
+  console.log(protocol);
   if (!val || (val.entrypoint === 'default' && 'prim' in val.value && val.value.prim === 'Unit')) {
     return '00';
   }
 
-  const encodedEntrypoint = entrypointEncoder(val.entrypoint);
+  const encodedEntrypoint = entrypointEncoder(val.entrypoint, protocol!);
   const parameters = valueEncoder(val.value);
   const length = (parameters.length / 2).toString(16).padStart(8, '0');
   return `ff${encodedEntrypoint}${length}${parameters}`;

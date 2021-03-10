@@ -26,23 +26,21 @@ export function getCodec(codec: CODEC) {
 }
 
 export class LocalForger implements Forger {
-  private codec = getCodec(CODEC.MANAGER);
   private protocol: string;
+  private codec = getCodec(CODEC.MANAGER);
 
   constructor(private currentProtocol: string = latestProtocol) {
     this.protocol = currentProtocol;
   }
 
   forge(params: ForgeParams): Promise<string> {
-    return Promise.resolve(this.codec.encoder(params));
+    //console.log("From main: ");
+    //console.log(this.protocol);
+    return Promise.resolve(this.codec.encoder(params, this.protocol));
   }
 
   parse(hex: string): Promise<ForgeParams> {
     return Promise.resolve(this.codec.decoder(hex) as ForgeParams);
-  }
-
-  getProtocol(): string {
-    return this.protocol;
   }
 }
 
